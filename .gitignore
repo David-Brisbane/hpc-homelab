@@ -1,0 +1,20 @@
+# Secrets and credentials
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
