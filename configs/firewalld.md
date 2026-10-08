@@ -12,14 +12,15 @@ The NAT-facing VMnet8 interface remains in the `public` zone.
 
 The `hpc` zone permits:
 
-| Traffic | Protocol | Port |
-|---|---|---:|
-| SSH | TCP | 22 |
-| Slurm controller | TCP | 6817 |
-| Slurm compute daemon | TCP | 6818 |
-| Slurm srun communication | TCP | 60001-60100 |
+| Traffic                  | Protocol |        Port |
+| ------------------------ | -------- | ----------: |
+| SSH                      | TCP      |          22 |
+| Slurm controller         | TCP      |        6817 |
+| Slurm compute daemon     | TCP      |        6818 |
+| Slurm srun communication | TCP      | 60001-60100 |
+| NFS shared storage       | TCP      |        2049 |
 
-The Slurm ports are only exposed through the private HPC network.
+The Slurm and NFS ports are only exposed through the private HPC network.
 
 ## Slurm Controller
 
@@ -51,6 +52,20 @@ The same TCP range is permitted through the `hpc` zone on the relevant nodes.
 
 This is required because multi-node `srun` communication can occur directly between compute nodes.
 
+## NFS Shared Storage
+
+`head01` provides NFS shared storage through the `/shared` export.
+
+NFSv4 uses TCP port 2049.
+
+The HPC firewall permits:
+
+`2049/tcp`
+
+This allows the compute nodes to access the NFS export over the private HPC network.
+
+The compute nodes act as NFS clients and do not run an NFS server.
+
 ## SSH
 
 SSH is permitted through the `hpc` zone on TCP port 22.
@@ -79,6 +94,10 @@ The srun range was permitted with:
 
 sudo firewall-cmd --permanent --zone=hpc --add-port=60001-60100/tcp
 
+NFS traffic was permitted with:
+
+sudo firewall-cmd --permanent --zone=hpc --add-port=2049/tcp
+
 The firewall configuration was then reloaded:
 
 sudo firewall-cmd --reload
@@ -93,7 +112,7 @@ The HPC zone configuration can be checked with:
 
 sudo firewall-cmd --zone=hpc --list-all
 
-The expected configuration includes the required SSH and Slurm ports.
+The expected configuration includes the required SSH, Slurm and NFS ports.
 
 ## Security Model
 
@@ -104,3 +123,4 @@ VMnet8 provides NAT connectivity for package management and external access.
 VMnet1 carries cluster traffic and is restricted by the dedicated `hpc` firewalld zone.
 
 Only the services required for cluster operation are permitted on the private HPC network.
+
