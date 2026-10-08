@@ -137,6 +137,31 @@ The resulting task placement confirmed that both compute nodes were participatin
 
 This provides the core multi-node scheduling milestone for the project.
 
+## Slurm and Shared Storage
+
+NFS shared storage was integrated with the Slurm cluster.
+
+The /shared filesystem is mounted on head01, compute01 and compute02. This provides a common location for job scripts, Slurm output and workload results.
+
+A test workload was submitted using sbatch and configured to write its results to:
+
+/shared/results/
+
+Multiple jobs were submitted and successfully scheduled across both compute nodes.
+
+Observed execution included:
+
+* Job 17 — compute01
+* Job 18 — compute01
+* Job 19 — compute02
+* Job 20 — compute01
+* Job 21 — compute02
+* Job 22 — compute01
+
+The results were visible from the shared filesystem on head01, demonstrating that Slurm could schedule workloads to different compute nodes while NFS provided a consistent shared storage location.
+
+This separates compute resource allocation from shared data access, providing a more realistic HPC workload environment.
+
 ## Current Status
 
 The Slurm environment is operational.

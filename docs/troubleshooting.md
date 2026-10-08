@@ -144,3 +144,34 @@ The cluster was debugged by separating the problem into layers:
 9. Task execution
 
 This made it possible to identify the firewall as the cause of the multi-node `srun` issue rather than changing Slurm configuration unnecessarily.
+
+## NFS Root Squashing
+
+The NFS export uses root_squash.
+
+This means that root on a compute node does not retain root privileges when accessing the NFS filesystem on head01.
+
+For example:
+
+* hpcadmin can write to /shared where filesystem permissions allow it.
+* root on compute01 or compute02 cannot automatically write as root on the NFS server.
+
+This behaviour is intentional and provides an additional security boundary between the compute nodes and the NFS server.
+
+The export was therefore left configured with root_squash rather than using no_root_squash.
+
+## NFS Shared Storage Validation
+
+NFS was validated by mounting /shared on both compute nodes and creating files from the shared filesystem.
+
+A Slurm workload was then used to verify integration between Slurm and NFS.
+
+Jobs were scheduled to both compute nodes and wrote their results to:
+
+/shared/results/
+
+Example results included jobs executing on both compute01 and compute02.
+
+This demonstrated that jobs running on different compute nodes could write to and access the same shared filesystem.
+
+

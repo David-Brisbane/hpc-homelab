@@ -86,6 +86,41 @@ The issue was resolved by:
 
 After the change, multi-node `srun` and batch jobs completed successfully.
 
+## NFS Networking
+
+Shared storage is provided by NFS over the private HPC network.
+
+NFS traffic is restricted to the 10.10.10.0/24 cluster network. The NFS export is configured on head01 as:
+
+/shared 10.10.10.0/24(rw,sync,no_subtree_check)
+
+The hpc firewalld zone explicitly permits NFS traffic on head01.
+
+The compute nodes act as NFS clients and mount:
+
+head01:/shared
+
+at:
+
+/shared
+
+The NAT/Internet-facing interface is not used for NFS traffic.
+
+This maintains the separation between:
+
+* VMnet8/NAT — package downloads and external connectivity
+* VMnet1 — private HPC cluster communication and shared storage
+
+### NFS Connectivity
+
+The initial NFS mount from compute01 hung even though nfs-server was active on head01.
+
+The cause was the cluster's firewalld configuration. The private hpc zone uses explicit service and port allowances, so NFS traffic was initially blocked.
+
+NFS was enabled in the hpc zone rather than disabling the firewall.
+
+After the firewall rule was applied, the compute nodes were able to mount the NFS export successfully.
+
 ## Validation
 
 Basic private-network connectivity can be checked with:

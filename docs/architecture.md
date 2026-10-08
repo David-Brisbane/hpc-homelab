@@ -125,17 +125,25 @@ SSH key-based authentication is configured for the hpcadmin account.
 
 Root SSH access is disabled.
 
-## Storage
+## Shared Storage
 
-Each VM currently uses its own local filesystem.
+The cluster uses NFS to provide shared storage across the private HPC network.
 
-There is no shared filesystem such as NFS in the current design.
+head01 acts as the NFS server and exports /shared to the compute nodes.
 
-Consequently, files created during job execution are local to the node where they are created.
+* head01 — NFS server
+* compute01 — NFS client
+* compute02 — NFS client
 
-For Slurm batch jobs, the batch output file is written on the node acting as the batch host.
+The export is restricted to the private HPC subnet:
 
-A shared filesystem may be added in a later stage of the project if required.
+/shared 10.10.10.0/24(rw,sync,no_subtree_check)
+
+The compute nodes mount the export as /shared.
+
+This provides a common filesystem for job scripts, results and Slurm output, allowing workloads scheduled to different compute nodes to access the same files.
+
+The NFS export uses root_squash, preventing root on a client node from being treated as root on the NFS server.
 
 ## Firewall Model
 
@@ -165,5 +173,6 @@ The cluster has successfully demonstrated:
 - two-node Slurm allocations
 - multi-node srun execution
 - firewalld-controlled HPC traffic
+- nfs shared storage
 
 The core three-node HPC scheduling milestone is operational.
