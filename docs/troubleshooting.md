@@ -175,3 +175,42 @@ Example results included jobs executing on both compute01 and compute02.
 This demonstrated that jobs running on different compute nodes could write to and access the same shared filesystem.
 
 
+##compute01 Failed to Start slurmd After Reboot
+
+##Symptom
+
+After reboot validation, slurmd failed on compute01 with:
+
+fatal: Unable to determine this slurmd's NodeName
+
+##Diagnosis
+
+The hostname used by the operating system did not match the node name configured in Slurm. The hostname had been set during installation but was not persistent across reboot.
+
+##Resolution
+
+Set the persistent hostname on compute01:
+
+hostnamectl hostname compute01
+
+Rebooted the VM and verified that slurmd started automatically.
+
+##Verification
+
+On compute01:
+
+hostnamectl
+systemctl is-active munge
+systemctl is-active slurmd
+
+On head01:
+
+sinfo
+scontrol show node compute01
+
+Both compute nodes returned to IDLE, and a targeted srun task executed successfully on compute01.
+
+##Lesson
+
+Slurm node identity depends on the compute host being identifiable by the configured node name. Validate persistent hostnames during initial cluster configuration and after reboot; don't change the Slurm node definition to work around an incorrectly configured hostname.
+

@@ -129,6 +129,62 @@ The configuration should permit the traffic required for:
 - Slurm compute communication
 - `srun` communication on ports 60001-60100/tcp
 
+## 12. Reboot and Service Persistence
+
+Reboot the cluster nodes and verify that the required services start automatically.
+
+On head01:
+
+systemctl is-active munge
+systemctl is-active slurmctld
+
+On each compute node:
+
+systemctl is-active munge
+systemctl is-active slurmd
+
+Verify that both compute nodes re-register with Slurm:
+
+sinfo
+scontrol show nodes
+
+Both compute nodes should return to the IDLE state.
+
+Troubleshooting note: During testing, compute01 initially failed to start slurmd because its hostname was not persistent across reboot. Setting the persistent hostname to compute01 resolved the issue, and slurmd subsequently started automatically.
+
+## 13. Node Failure and Recovery
+
+Simulate an abrupt compute-node outage by powering off the compute01 VM in VMware Workstation without first draining it.
+
+Monitor the node from head01:
+
+sinfo
+scontrol show node compute01
+
+While the VM is offline, Slurm should eventually report the node as unresponsive, for example with the state IDLE+NOT_RESPONDING.
+
+Power the VM back on and verify its services:
+
+systemctl is-active munge
+systemctl is-active slurmd
+
+Then, from head01, confirm that the node returns to service:
+
+sinfo
+scontrol show node compute01
+
+Finally, verify that Slurm can execute a task on the recovered node:
+
+srun --nodes=1 --ntasks=1 --nodelist=compute01 hostname
+
+Expected output:
+
+compute01
+
+Validation result: compute01 was detected as unresponsive during the simulated outage, returned to IDLE after the VM restarted, and successfully executed a targeted Slurm task without a manual RESUME operation.
+
+This test validates node detection and recovery. Recovery of jobs interrupted by a node failure has not been tested.
+
 ## Validation Result
 
 The cluster has passed the core validation required for the initial HPC lab milestone:
@@ -142,6 +198,9 @@ The cluster has passed the core validation required for the initial HPC lab mile
 - [x] Slurm partition
 - [x] Single-node workload
 - [x] Multi-node workload
-- [x] Firewall-controlled Slurm communication
+- [x] Service persistence after reboot
+- [x] Compute-node failure detection
+- [x] Compute-node recovery after restart
+- [x] Successful workload execution after recovery
 
 The three-node Rocky Linux HPC cluster is operational and capable of scheduling workloads across both compute nodes.

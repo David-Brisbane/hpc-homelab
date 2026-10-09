@@ -162,16 +162,54 @@ The results were visible from the shared filesystem on head01, demonstrating tha
 
 This separates compute resource allocation from shared data access, providing a more realistic HPC workload environment.
 
+
+## Node Availability and Recovery
+
+Slurm node states provide operational visibility into compute-node availability.
+
+During a controlled drain, the command below prevents new work from being scheduled on the node while existing work is allowed to finish. The reason can be recorded using the Reason field.
+
+scontrol update NodeName=compute01 State=DRAIN Reason="Controlled node failure test"
+
+During the failure drill, compute01 was powered off in VMware without first draining it. Slurm eventually reported:
+
+State=IDLE+NOT_RESPONDING
+
+The NOT_RESPONDING flag indicated that Slurm could no longer communicate with the node. The IDLE component reflected its recorded allocation state; it did not mean the powered-off node was healthy or usable.
+
+After compute01 was powered back on, munge and slurmd started, and Slurm returned the node to IDLE without an administrator manually resuming it.
+
+Useful inspection commands:
+
+sinfo
+scontrol show node compute01
+systemctl is-active munge
+systemctl is-active slurmd
+
+A successful post-recovery test:
+
+srun --nodes=1 --ntasks=1 --nodelist=compute01 hostname
+
+This confirms that a task can run on the recovered node. It does not prove that a job interrupted by a node failure can resume; job requeue and application checkpoint/restart are separate behaviours that require dedicated testing.
+
+
 ## Current Status
 
 The Slurm environment is operational.
 
 Verified functionality includes:
 
-- controller operation
-- compute-node registration
-- resource allocation
-- single-node jobs
-- two-node allocations
-- multi-node `srun` execution
-- multi-node batch workloads
+* Slurm controller operation
+* Compute-node registration and availability reporting
+* Resource allocation across compute nodes
+* Single-node job execution
+* Two-node resource allocations
+* Multi-node `srun` execution with tasks distributed across both compute nodes
+* Multi-node batch workload execution
+* Slurm communication permitted through the dedicated firewalld HPC zone
+* Munge authentication between cluster nodes
+* Automatic startup of Munge and Slurm services after reboot
+* Detection of a compute-node communication failure
+* Automatic return of a recovered compute node to the `IDLE` state
+* Successful workload execution on a recovered compute node
+* Persistent hostname configuration and recovery from a hostname-related `slurmd` startup failure
